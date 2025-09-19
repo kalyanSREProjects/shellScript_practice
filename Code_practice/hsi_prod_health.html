@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Server Stats</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .error-row {
+            border: 2px solid red;
+        }
+    </style>
+</head>
+<body>
+    <table id="statsTable">
+        <thead>
+            <tr>
+                <th>DC</th>
+                <th>Url</th>
+                <th>Status</th>
+                <th>Update Time</th>
+                <th>TId</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be initialized here based on the number of URLs -->
+        </tbody>
+    </table>
+
+    <script>
+        const urls = [
+            'https://mlhsi.kotaksecurities.com/health?sId=Server1',
+			'https://mlhsi.kotaksecurities.com/health?sId=Server2',
+            'https://mlhsi.kotaksecurities.com/health?sId=Server3',
+			'https://mlhsi.kotaksecurities.com/health?sId=Server4',
+            'https://mlhsi.kotaksecurities.com/health?sId=Server5',
+            'https://mdlhsi.kotaksecurities.com/health?sId=Server1',
+			'https://mdlhsi.kotaksecurities.com/health?sId=Server2',
+            'https://mdlhsi.kotaksecurities.com/health?sId=Server3',
+            
+            'https://clhsi.kotaksecurities.com/health?sId=Server1',
+            'https://clhsi.kotaksecurities.com/health?sId=Server2',
+            'https://clhsi.kotaksecurities.com/health?sId=Server3',
+            'https://clhsi.kotaksecurities.com/health?sId=Server4',
+            'https://clhsi.kotaksecurities.com/health?sId=Server5',
+        ];
+
+        // Function to initialize table rows based on URLs
+        function initializeTable() {
+            const tableBody = document.querySelector('#statsTable tbody');
+            urls.forEach((url, index) => {
+                const row = document.createElement('tr');
+                let dc = "GDC";
+                row.id = `row-${index}`;
+                if (url.includes("mlhsi")) {
+                        row.style.backgroundColor = "#d2eaf2";
+                        dc = "GDC";
+                } else if (url.includes("mdlhsi")) {
+                    row.style.backgroundColor = "#b3f7b3";
+                    dc = "GDC-D";
+                } else if (url.includes("clhsi")) {
+                    row.style.backgroundColor = "#e6ec9b";
+                    dc = "ADC";
+                }
+                row.innerHTML = `
+                    <td>${dc}</td>
+                    <td>${url}</td>
+                    <td id="stat-${index}">NA</td>
+                    <td id="update-time-${index}">NA</td>
+                    <td id="tid-${index}">NA</td>
+                    <td id="remarks-${index}">NA</td>`;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Function to fetch data from the URL
+        async function fetchData(url, index) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching data from:', url, error);
+                return null;
+            }
+        }
+
+        // Function to update table data
+        async function updateTable() {
+            for (const [index, url] of urls.entries()) {
+                const data = await fetchData(url, index);
+                if (data) {
+                    document.getElementById(`stat-${index}`).textContent = data["stat"];
+                    document.getElementById(`update-time-${index}`).textContent = data["updateTime"];
+                    document.getElementById(`tid-${index}`).textContent = data["tid"];
+                    document.getElementById(`remarks-${index}`).textContent = data["remarks"];
+                    document.getElementById(`row-${index}`).classList.remove('error-row');
+                } else {
+                    // Set all cells to NA if there is an error
+                    document.getElementById(`stat-${index}`).textContent = 'NA';
+                    document.getElementById(`update-time-${index}`).textContent = 'NA';
+                    document.getElementById(`tid-${index}`).textContent = 'NA';
+                    document.getElementById(`remarks-${index}`).textContent = 'NA';
+                    document.getElementById(`row-${index}`).classList.add('error-row');
+                }
+            }
+        }
+        initializeTable();
+        setInterval(updateTable, 10000);
+        updateTable();
+    </script>
+</body>
+</html>
